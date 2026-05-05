@@ -141,5 +141,118 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  CAN_RxHeaderTypeDef RxHeader;
+  uint8_t RxData[8];
 
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  switch (RxHeader.StdId)
+  {
+
+  case 0x153: // Скорость
+    float speed_raw = ((uint16_t)RxData[2] << 8 | RxData[1]) >> 4;
+    car.Speed = (uint8_t)speed_raw * 1.125f;
+    break;
+
+  case 0x1F5: // Угол руля
+    uint16_t word_a = (uint16_t)RxData[0] | ((uint16_t)RxData[1] << 8);
+    uint16_t angle_raw = word_a & 0x7FFF;
+    uint8_t angle_sign = (word_a >> 15) & 1;
+    float angle_deg = (angle_sign ? -1.0f : 1.0f) * angle_raw * 0.045f;
+    car.Steering_Angle = (int16_t)angle_deg;
+    break;
+
+  case 0x316: // Обороты
+    float rpm_raw = ((uint16_t)RxData[3] << 8) | RxData[2];
+    car.RPM = (uint16_t)rpm_raw / 6.4f;
+    break;
+
+  case 0x329: // Температура ОЖ
+    car.Coolant_Temp = (int8_t)(0.75f * RxData[1] - 48.37f);
+    break;
+
+  case 0x545: // Предупреждения
+              // 0x02 - Check Engine
+    if (RxData[0] & 0x02)
+    {
+      car.Warnings |= WARN_CHECK_ENGINE;
+    }
+    else
+    {
+      car.Warnings &= ~WARN_CHECK_ENGINE;
+    }
+
+    // 0x08 - Cruise Control
+    if (RxData[0] & 0x08)
+    {
+      car.Warnings |= WARN_CRUISE;
+    }
+    else
+    {
+      car.Warnings &= ~WARN_CRUISE;
+    }
+
+    // 0x10 - EML
+    if (RxData[0] & 0x10)
+    {
+      car.Warnings |= WARN_EML;
+    }
+    else
+    {
+      car.Warnings &= ~WARN_EML;
+    }
+
+    // 0x01 - Battery Charge
+    if (RxData[5] & 0x01)
+    {
+      car.Warnings |= WARN_BATTERY;
+    }
+    else
+    {
+      car.Warnings &= ~WARN_BATTERY;
+    }
+    break;
+
+  case 0x613: // Топливо
+    float percent;
+
+    if (RxData[2] >= 0x80)
+    {
+      percent = (float)(RxData[2] - 0x80) / (float)(0x87 - 0x80) * 10.0f;
+    }
+    else
+    {
+      percent = 10.0f + (float)(RxData[2] - 0x08) / (float)(0x39 - 0x08) * 90.0f;
+    }
+
+    if (percent < 0.0f)
+    {
+      percent = 0.0f;
+    }
+
+    if (percent > 100.0f)
+    {
+      percent = 100.0f;
+    }
+
+    car.Fuel_Level = (uint8_t)percent;
+    break;
+
+  case 0x615: // Температура на улице
+    if (RxData[3] > 0x80)
+    {
+      car.Outside_Temp = -(int8_t)(RxData[3] - 128);
+    }
+    else
+    {
+      car.Outside_Temp = (int8_t)RxData[3];
+    }
+    break;
+  }
+}
 /* USER CODE END 1 */
