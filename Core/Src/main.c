@@ -24,7 +24,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+// #include "ibus.h"
+#include "kbus.h"
+#include "kbus_debug.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t Backlight = 0; // Глобальная переменная для хранения уровня подсветки (пример)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +58,61 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// void on_ibus_msg(const IBusMessage *msg)
+// {
+//   // Печатаем КАЖДОЕ сообщение
+//   IBus_Debug_PrintMsg(msg);
 
+//   if (msg->data[0] == 0x5C)
+//   {
+//     Backlight = msg->data[1];
+//   }
+
+//   // Фильтр: только нам или broadcast
+//   if (msg->dst != IBUS_MY_ADDRESS && msg->dst != IBUS_DEV_BROADCAST)
+//     return;
+
+//   // Ответ на PING
+//   if (msg->data_len >= 1 && msg->data[0] == 0x01)
+//   {
+//     uint8_t pong[] = {0x02};
+//     IBus_Send(IBUS_MY_ADDRESS, msg->src, pong, 1);
+//     IBus_Debug_Log("  >> Sent PONG to %02X\r\n", msg->src);
+//   }
+// }
+
+// void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+// {
+//   IBus_UART_RxEventCallback(huart, Size);
+// }
+
+void KBUS_RxMsgCallback(KBUS_MessageTypeDef *msg)
+{
+  // Выводим каждое сообщение в отладочный интерфейс
+  KBUS_Debug_PrintMsg(msg);
+
+  if (msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING)
+  {
+    Backlight = msg->Data[1];
+  }
+
+  // Пример запроса статуса зажигания
+  if (msg->Size >= 1 && msg->Data[0] == KBUS_CMD_IGNITION_REQUEST)
+  {
+    uint8_t src = KBUS_DEV_IKE;
+    uint8_t data[] = {KBUS_CMD_IGNITION, 0x03};
+    KBUS_SendMsg(src, KBUS_DEV_BROADCAST, data, 2);
+    KBUS_Debug_Log("  >> Sent Ignition Status to %02X\r\n", KBUS_DEV_BROADCAST);
+  }
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+  if (huart->Instance == USART3)
+  {
+    KBUS_ParseRxMsg(Size);
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -90,8 +146,11 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  // IBus_Init(&huart3, on_ibus_msg);
+  KBUS_Debug_Init(&huart2);
+  KBUS_Init(&huart3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,6 +160,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // IBus_Process();
+    KBUS_Process();
   }
   /* USER CODE END 3 */
 }
