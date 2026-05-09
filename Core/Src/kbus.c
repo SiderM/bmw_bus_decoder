@@ -1,6 +1,6 @@
 #include "kbus.h"
 
-static UART_HandleTypeDef *_huart;
+static UART_HandleTypeDef *_uart;
 
 uint8_t kbusRxBuffer[KBUS_RX_BUFFER_SIZE];
 
@@ -82,12 +82,11 @@ static void KBUS_ParseByte(uint8_t b)
     }
 }
 
-HAL_StatusTypeDef KBUS_Init(UART_HandleTypeDef *huart)
+void KBUS_Init(UART_HandleTypeDef *huart)
 {
-    _huart = huart;
+    _uart = huart;
     KBUS_ResetParser();
-    HAL_UARTEx_ReceiveToIdle_IT(_huart, kbusRxBuffer, KBUS_RX_BUFFER_SIZE);
-    return HAL_OK;
+    HAL_UARTEx_ReceiveToIdle_IT(_uart, kbusRxBuffer, KBUS_RX_BUFFER_SIZE);
 }
 
 void KBUS_Process(void)
@@ -99,13 +98,13 @@ void KBUS_Process(void)
     }
 }
 
-void KBUS_ParseRxMsg(uint16_t Size)
+void KBUS_Parse(uint16_t Size)
 {
     RBUF_Push(kbusRxBuffer, Size);
-    HAL_UARTEx_ReceiveToIdle_IT(_huart, kbusRxBuffer, KBUS_RX_BUFFER_SIZE);
+    HAL_UARTEx_ReceiveToIdle_IT(_uart, kbusRxBuffer, KBUS_RX_BUFFER_SIZE);
 }
 
-HAL_StatusTypeDef KBUS_SendMsg(uint8_t Src, uint8_t Dst, const uint8_t *pData, uint8_t Size)
+HAL_StatusTypeDef KBUS_Send(uint8_t Src, uint8_t Dst, const uint8_t *pData, uint8_t Size)
 {
     if (Size > KBUS_MAX_DATA_LEN)
         return HAL_ERROR;
@@ -128,7 +127,7 @@ HAL_StatusTypeDef KBUS_SendMsg(uint8_t Src, uint8_t Dst, const uint8_t *pData, u
     HAL_Delay(10);
 
     uartTxBusy = 1;
-    HAL_StatusTypeDef status = HAL_UART_Transmit(_huart, buf, 4 + Size, 50);
+    HAL_StatusTypeDef status = HAL_UART_Transmit(_uart, buf, 4 + Size, 50);
     uartTxBusy = 0;
 
     return status;

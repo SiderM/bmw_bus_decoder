@@ -33,11 +33,11 @@ static const KBUS_CommandTypeDef kbusCommands[] = {
     {KBUS_DEV_LCM, KBUS_DEV_BROADCAST, KBUS_CMD_INSTRUMENT_BACKLIGHTING, "Instrument Backlighting"},
 };
 
-static const char *KBUS_Debug_GetDeviceName(uint8_t id)
+static const char *KBUS_Debug_GetDeviceName(uint8_t Id)
 {
     for (size_t i = 0; i < sizeof(kbusNames) / sizeof(kbusNames[0]); i++)
     {
-        if (kbusNames[i].Id == id)
+        if (kbusNames[i].Id == Id)
         {
             return kbusNames[i].Name;
         }
@@ -45,13 +45,13 @@ static const char *KBUS_Debug_GetDeviceName(uint8_t id)
     return "????";
 }
 
-static const char *KBUS_Debug_GetCommandDesc(uint8_t src, uint8_t dst, uint8_t cmd)
+static const char *KBUS_Debug_GetCommandDesc(uint8_t Src, uint8_t Dst, uint8_t Cmd)
 {
     for (size_t i = 0; i < sizeof(kbusCommands) / sizeof(kbusCommands[0]); i++)
     {
-        uint8_t src_match = (kbusCommands[i].Src == KBUS_DEV_ZKE) || (kbusCommands[i].Src == src);
-        uint8_t dst_match = (kbusCommands[i].Dst == KBUS_DEV_ZKE) || (kbusCommands[i].Dst == dst);
-        if (src_match && dst_match && kbusCommands[i].Cmd == cmd)
+        uint8_t src_match = (kbusCommands[i].Src == KBUS_DEV_ZKE) || (kbusCommands[i].Src == Src);
+        uint8_t dst_match = (kbusCommands[i].Dst == KBUS_DEV_ZKE) || (kbusCommands[i].Dst == Dst);
+        if (src_match && dst_match && kbusCommands[i].Cmd == Cmd)
         {
             return kbusCommands[i].Desc;
         }
@@ -80,24 +80,12 @@ void KBUS_Debug_Log(const char *fmt, ...)
     KBUS_Debug_Write(buf);
 }
 
-void KBUS_Debug_PrintRaw(const char *tag, const uint8_t *pData, uint8_t Size)
-{
-    char buf[16];
-    KBUS_Debug_Write(tag);
-    for (uint8_t i = 0; i < Size; i++)
-    {
-        snprintf(buf, sizeof(buf), " %02X", pData[i]);
-        KBUS_Debug_Write(buf);
-    }
-    KBUS_Debug_Write("\r\n");
-}
-
-void KBUS_Debug_PrintMsg(const KBUS_MessageTypeDef *msg)
+void KBUS_Debug_PrintMsg(const KBUS_MessageTypeDef *Msg)
 {
     char buf[128];
-    const char *known_cmd = (msg->Size > 0) ? KBUS_Debug_GetCommandDesc(msg->Src, msg->Dst, msg->Data[0]) : NULL;
+    const char *known_cmd = (Msg->Size > 0) ? KBUS_Debug_GetCommandDesc(Msg->Src, Msg->Dst, Msg->Data[0]) : NULL;
 
-    snprintf(buf, sizeof(buf), "[%s(%02X) >> %s(%02X)] len=%d", KBUS_Debug_GetDeviceName(msg->Src), msg->Src, KBUS_Debug_GetDeviceName(msg->Dst), msg->Dst, msg->Size);
+    snprintf(buf, sizeof(buf), "[%s(%02X) >> %s(%02X)] len=%d", KBUS_Debug_GetDeviceName(Msg->Src), Msg->Src, KBUS_Debug_GetDeviceName(Msg->Dst), Msg->Dst, Msg->Size);
     KBUS_Debug_Write(buf);
 
     if (known_cmd)
@@ -107,18 +95,18 @@ void KBUS_Debug_PrintMsg(const KBUS_MessageTypeDef *msg)
     }
 
     KBUS_Debug_Write("\r\n  DATA:");
-    for (uint8_t i = 0; i < msg->Size; i++)
+    for (uint8_t i = 0; i < Msg->Size; i++)
     {
-        snprintf(buf, sizeof(buf), " %02X", msg->Data[i]);
+        snprintf(buf, sizeof(buf), " %02X", Msg->Data[i]);
         KBUS_Debug_Write(buf);
     }
 
-    snprintf(buf, sizeof(buf), "  CRC=%02X [%s]\r\n", msg->Checksum, msg->Valid ? "OK" : "FAIL");
+    snprintf(buf, sizeof(buf), "  CRC=%02X [%s]\r\n", Msg->Checksum, Msg->Valid ? "OK" : "FAIL");
     KBUS_Debug_Write(buf);
 
-    if (msg->Src == KBUS_DEV_LCM && msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING && msg->Size >= 2)
+    if (Msg->Src == KBUS_DEV_LCM && Msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING && Msg->Size >= 2)
     {
-        uint8_t blk = (msg->Data[1] * 100) / 0xFE;
+        uint8_t blk = (Msg->Data[1] * 100) / 0xFE;
         snprintf(buf, sizeof(buf), "  >> BackLight: %d%%\r\n", blk);
         KBUS_Debug_Write(buf);
     }

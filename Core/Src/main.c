@@ -27,6 +27,8 @@
 // #include "ibus.h"
 #include "kbus.h"
 #include "kbus_debug.h"
+#include "can_debug.h"
+// #include "decoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +50,7 @@
 
 /* USER CODE BEGIN PV */
 uint8_t Backlight = 0; // Глобальная переменная для хранения уровня подсветки (пример)
+uint8_t Speed = 0;     // Глобальная переменная для хранения скорости автомобиля (пример)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,61 +61,153 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-// void on_ibus_msg(const IBusMessage *msg)
-// {
-//   // Печатаем КАЖДОЕ сообщение
-//   IBus_Debug_PrintMsg(msg);
-
-//   if (msg->data[0] == 0x5C)
-//   {
-//     Backlight = msg->data[1];
-//   }
-
-//   // Фильтр: только нам или broadcast
-//   if (msg->dst != IBUS_MY_ADDRESS && msg->dst != IBUS_DEV_BROADCAST)
-//     return;
-
-//   // Ответ на PING
-//   if (msg->data_len >= 1 && msg->data[0] == 0x01)
-//   {
-//     uint8_t pong[] = {0x02};
-//     IBus_Send(IBUS_MY_ADDRESS, msg->src, pong, 1);
-//     IBus_Debug_Log("  >> Sent PONG to %02X\r\n", msg->src);
-//   }
-// }
-
-// void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-// {
-//   IBus_UART_RxEventCallback(huart, Size);
-// }
-
-void KBUS_RxMsgCallback(KBUS_MessageTypeDef *msg)
-{
-  // Выводим каждое сообщение в отладочный интерфейс
-  KBUS_Debug_PrintMsg(msg);
-
-  if (msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING)
-  {
-    Backlight = msg->Data[1];
-  }
-
-  // Пример запроса статуса зажигания
-  if (msg->Size >= 1 && msg->Data[0] == KBUS_CMD_IGNITION_REQUEST)
-  {
-    uint8_t src = KBUS_DEV_IKE;
-    uint8_t data[] = {KBUS_CMD_IGNITION, 0x03};
-    KBUS_SendMsg(src, KBUS_DEV_BROADCAST, data, 2);
-    KBUS_Debug_Log("  >> Sent Ignition Status to %02X\r\n", KBUS_DEV_BROADCAST);
-  }
-}
-
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
   if (huart->Instance == USART3)
   {
-    KBUS_ParseRxMsg(Size);
+    KBUS_Parse(Size);
   }
 }
+
+void KBUS_RxMsgCallback(KBUS_MessageTypeDef *Msg)
+{
+  // Выводим каждое сообщение в отладочный интерфейс
+  KBUS_Debug_PrintMsg(Msg);
+
+  // Пример обработки команды изменения подсветки приборов
+  if (Msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING)
+  {
+    Backlight = Msg->Data[1];
+  }
+
+  // Пример запроса статуса зажигания, отправки ответа и логирования
+  if (Msg->Data[0] == KBUS_CMD_IGNITION_REQUEST && Msg->Size >= 1)
+  {
+    uint8_t src = KBUS_DEV_IKE;
+    uint8_t data[] = {KBUS_CMD_IGNITION, 0x03};
+    KBUS_Send(src, KBUS_DEV_BROADCAST, data, 2);
+    KBUS_Debug_Log(" [KBUS] >> Sent Ignition Status to %02X\r\n", KBUS_DEV_BROADCAST);
+  }
+}
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+  CAN_RxHeaderTypeDef RxHeader;
+  uint8_t RxData[8];
+
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  CAN_Debug_PrintFrame(&RxHeader, RxData, RxHeader.DLC);
+
+  // Пример обработки сообщений с определёнными ID
+  if (RxHeader.StdId == 0x153) // Скорость
+  {
+    float speed_raw = ((uint16_t)RxData[2] << 8 | RxData[1]) >> 4;
+    Speed = (uint8_t)(speed_raw * 1.125f);
+  }
+
+  // switch (RxHeader.StdId)
+  // {
+  // case 0x1F5: // Угол руля
+  //   uint16_t word_a = (uint16_t)RxData[0] | ((uint16_t)RxData[1] << 8);
+  //   uint16_t angle_raw = word_a & 0x7FFF;
+  //   uint8_t angle_sign = (word_a >> 15) & 1;
+  //   float angle_deg = (angle_sign ? -1.0f : 1.0f) * angle_raw * 0.045f;
+  //   car.Steering_Angle = (int16_t)angle_deg;
+  //   break;
+
+  // case 0x316: // Обороты
+  //   float rpm_raw = ((uint16_t)RxData[3] << 8) | RxData[2];
+  //   car.RPM = (uint16_t)rpm_raw / 6.4f;
+  //   break;
+
+  // case 0x329: // Температура ОЖ
+  //   car.Coolant_Temp = (int8_t)(0.75f * RxData[1] - 48.37f);
+  //   break;
+
+  // case 0x545: // Предупреждения
+  //             // 0x02 - Check Engine
+  //   if (RxData[0] & 0x02)
+  //   {
+  //     car.Warnings |= WARN_CHECK_ENGINE;
+  //   }
+  //   else
+  //   {
+  //     car.Warnings &= ~WARN_CHECK_ENGINE;
+  //   }
+
+  //   // 0x08 - Cruise Control
+  //   if (RxData[0] & 0x08)
+  //   {
+  //     car.Warnings |= WARN_CRUISE;
+  //   }
+  //   else
+  //   {
+  //     car.Warnings &= ~WARN_CRUISE;
+  //   }
+
+  //   // 0x10 - EML
+  //   if (RxData[0] & 0x10)
+  //   {
+  //     car.Warnings |= WARN_EML;
+  //   }
+  //   else
+  //   {
+  //     car.Warnings &= ~WARN_EML;
+  //   }
+
+  //   // 0x01 - Battery Charge
+  //   if (RxData[5] & 0x01)
+  //   {
+  //     car.Warnings |= WARN_BATTERY;
+  //   }
+  //   else
+  //   {
+  //     car.Warnings &= ~WARN_BATTERY;
+  //   }
+  //   break;
+
+  // case 0x613: // Топливо
+  //   float percent;
+
+  //   if (RxData[2] >= 0x80)
+  //   {
+  //     percent = (float)(RxData[2] - 0x80) / (float)(0x87 - 0x80) * 10.0f;
+  //   }
+  //   else
+  //   {
+  //     percent = 10.0f + (float)(RxData[2] - 0x08) / (float)(0x39 - 0x08) * 90.0f;
+  //   }
+
+  //   if (percent < 0.0f)
+  //   {
+  //     percent = 0.0f;
+  //   }
+
+  //   if (percent > 100.0f)
+  //   {
+  //     percent = 100.0f;
+  //   }
+
+  //   car.Fuel_Level = (uint8_t)percent;
+  //   break;
+
+  // case 0x615: // Температура на улице
+  //   if (RxData[3] > 0x80)
+  //   {
+  //     car.Outside_Temp = -(int8_t)(RxData[3] - 128);
+  //   }
+  //   else
+  //   {
+  //     car.Outside_Temp = (int8_t)RxData[3];
+  //   }
+  //   break;
+  // }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -148,9 +243,9 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  // IBus_Init(&huart3, on_ibus_msg);
-  KBUS_Debug_Init(&huart2);
   KBUS_Init(&huart3);
+  KBUS_Debug_Init(&huart2);
+  CAN_Debug_Init(&huart2);
   /* USER CODE END 2 */
 
   /* Infinite loop */

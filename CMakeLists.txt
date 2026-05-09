@@ -45,10 +45,11 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/decoder.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/kbus.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/ring_buf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/kbus.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/kbus_debug.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/can_debug.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/decoder.c
 )
 
 # Add include paths
