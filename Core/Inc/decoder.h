@@ -8,28 +8,37 @@ extern "C"
 
 #include "main.h"
 
-    /* Определение структуры состояния автомобиля */
     typedef struct
     {
-        uint16_t RPM;
+        uint16_t Rpm;
         uint8_t Speed;
-        uint8_t Fuel_Level;
-        int8_t Coolant_Temp;
-        int8_t Outside_Temp;
+        uint8_t FuelLevel;
+        int8_t CoolantTemp;
+        int8_t OutsideTemp;
         uint8_t Gear;
-        int16_t Steering_Angle;
-        uint16_t Warnings;
-    } CarState;
+        uint8_t GearMode;
+        int16_t SteeringAngle;
+        uint16_t EngineIndicators;
+        uint16_t TransmissionIndicators;
+        uint16_t BodyIndicators;
+    } Car_StateTypeDef;
 
-/* Определения для предупреждений */
-#define WARN_CHECK_ENGINE (1 << 0)
-#define WARN_EML (1 << 1)
-#define WARN_OIL_LEVEL (1 << 2)
-#define WARN_BATTERY (1 << 3)
-#define WARN_CRUISE (1 << 4)
+    typedef struct __attribute__((packed))
+    {
+        uint8_t Header[2]; // 0xAA 0x55
+        Car_StateTypeDef Data;
+    } Car_DataFrameTypeDef;
 
-    /* Структура для хранения состояния автомобиля */
-    extern volatile CarState car;
+    extern volatile Car_StateTypeDef carState;
+
+    void DECODER_CalculateRpm(uint8_t *pData);
+    void DECODER_CalculateSpeed(uint8_t *pData);
+    void DECODER_CalculateFuelLevel(uint8_t *pData);
+    void DECODER_CalculateCoolantTemp(uint8_t *pData);
+    void DECODER_CalculateOutsideTemp(uint8_t *pData);
+    void DECODER_CalculateGear(uint8_t *pData);
+    void DECODER_CalculateSteeringAngle(uint8_t *pData);
+    void DECODER_CalculateEngineIndicators(uint8_t *pData);
 
 #ifdef __cplusplus
 }

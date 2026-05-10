@@ -50,6 +50,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/kbus_debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/can_debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/decoder.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/decoder_debug.c
 )
 
 # Add include paths

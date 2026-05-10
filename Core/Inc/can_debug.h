@@ -11,6 +11,7 @@ extern "C"
 #include <stdarg.h>
 #include <stdio.h>
 
+#define CAN_ID_ASC1 0x153
 #define CAN_ID_DME1 0x316
 
     void CAN_Debug_Init(UART_HandleTypeDef *huart);
