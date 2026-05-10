@@ -74,8 +74,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 void KBUS_RxMsgCallback(KBUS_MessageTypeDef *Msg)
 {
-  // // Выводим каждое сообщение в отладочный интерфейс
-  // KBUS_Debug_PrintMsg(Msg);
+  // Выводим каждое сообщение в отладочный интерфейс
+  KBUS_Debug_PrintMsg(Msg);
 
   // // Пример обработки команды изменения подсветки приборов
   // if (Msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING)
@@ -188,7 +188,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == TIM7)
   {
-    DECODER_Debug_PrintMsg(&carState);
+    // DECODER_Debug_PrintMsg(&carState);
   }
 
   // HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&frame, sizeof(frame));
@@ -254,11 +254,11 @@ int main(void)
   HAL_CAN_Start(&hcan1);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-  // KBUS_Init(&huart3);
-  // KBUS_Debug_Init(&huart2);
+  KBUS_Init(&huart3);
+  KBUS_Debug_Init(&huart2);
   // CAN_Debug_Init(&huart2);
   HAL_TIM_Base_Start_IT(&htim7);
-  DECODER_Debug_Init(&huart2);
+  // DECODER_Debug_Init(&huart2);
   /* USER CODE END 2 */
 
   /* Infinite loop */

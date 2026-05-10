@@ -15,6 +15,7 @@ extern "C"
         uint8_t FuelLevel;
         int8_t CoolantTemp;
         int8_t OutsideTemp;
+        uint8_t Selector;
         uint8_t Gear;
         uint8_t GearMode;
         int16_t SteeringAngle;

@@ -48,8 +48,9 @@ void DECODER_CalculateOutsideTemp(uint8_t *pData)
 
 void DECODER_CalculateGear(uint8_t *pData)
 {
+    carState.Gear = pData[0];
+    carState.Selector = pData[1];
     carState.GearMode = pData[2];
-    carState.Gear = pData[1];
 }
 
 void DECODER_CalculateSteeringAngle(uint8_t *pData)

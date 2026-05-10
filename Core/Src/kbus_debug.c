@@ -104,12 +104,12 @@ void KBUS_Debug_PrintMsg(const KBUS_MessageTypeDef *Msg)
     snprintf(buf, sizeof(buf), "  CRC=%02X [%s]\r\n", Msg->Checksum, Msg->Valid ? "OK" : "FAIL");
     KBUS_Debug_Write(buf);
 
-    if (Msg->Src == KBUS_DEV_LCM && Msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING && Msg->Size >= 2)
-    {
-        uint8_t blk = (Msg->Data[1] * 100) / 0xFE;
-        snprintf(buf, sizeof(buf), "  >> BackLight: %d%%\r\n", blk);
-        KBUS_Debug_Write(buf);
-    }
+    // if (Msg->Src == KBUS_DEV_LCM && Msg->Data[0] == KBUS_CMD_INSTRUMENT_BACKLIGHTING && Msg->Size >= 2)
+    // {
+    //     uint8_t blk = (Msg->Data[1] * 100) / 0xFE;
+    //     snprintf(buf, sizeof(buf), "  >> BackLight: %d%%\r\n", blk);
+    //     KBUS_Debug_Write(buf);
+    // }
 
     KBUS_Debug_Write("\r\n");
 }

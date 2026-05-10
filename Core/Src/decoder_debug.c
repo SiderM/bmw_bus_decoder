@@ -37,6 +37,9 @@ void DECODER_Debug_PrintMsg(volatile Car_StateTypeDef *State)
     snprintf(buf, sizeof(buf), " > Gear: %d\r\n", State->Gear);
     DECODER_Debug_Write(buf);
 
+    snprintf(buf, sizeof(buf), " > Selector: %d\r\n", State->Selector);
+    DECODER_Debug_Write(buf);
+
     snprintf(buf, sizeof(buf), " > Gear Mode: %d\r\n", State->GearMode);
     DECODER_Debug_Write(buf);
 
